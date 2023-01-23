@@ -10,7 +10,7 @@
   models the go-to choice for many NLP tasks, and they have been shown to achieve          
   state-of-the-art results on a wide range of benchmarks.  
   
-#how to build a custom model, including the Keras functional API
+# how to build a custom model, including the Keras functional API
 The Keras functional API allows you to build complex models by connecting pre-defined layers. 
 To build a custom model using the functional API, you first need to import the necessary modules from Keras:
 
