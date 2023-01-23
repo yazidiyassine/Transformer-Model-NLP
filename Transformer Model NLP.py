@@ -19,5 +19,16 @@ Created on Mon Jan 23 12:11:58 2023
 
 
 import tensorflow as tf
-print(tf.__version__)
+# print(tf.__version__)
+import pathlib
 
+# Downloading dataset
+text_file = tf.keras.utils.get_file(
+    fname='fra-eng.zip',
+    origin='http://storage.googleapis.com/download.tensorflow.org/data/fra-eng.zip',
+    extract=True,
+    )
+
+# Showing where the file is located now
+text_file = pathlib.Path(text_file).parent / "fra.txt"
+print(text_file)
