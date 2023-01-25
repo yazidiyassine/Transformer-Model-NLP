@@ -314,12 +314,26 @@ Overall, positional embedding is a technique used to incorporate the order
 
 import numpy as np
 
+# =============================================================================
+# """ reates a positional encoding matrix using the numpy library.
+# The matrix is used to represent the position of elements in 
+# a sequence in a continuous and differentiable way. 
+# The function pos_enc_matrix takes in three 
+# parameters: L, which is the input dimension or length of the sequence,
+#  d, which is the output dimension or depth of the matrix, and n, 
+#  which is a constant used for the sinusoidal functions that create
+#  the matrix. The function asserts that d is an even number and then
+#  creates the matrix using sin and cos functions, with the arguments
+#  being based on the values of k and i, which are the position and
+#  depth of the element respectively."""
+# =============================================================================
+ 
 def pos_enc_matrix(L, d, n=10000):
     """Create positional encoding matrix
        Args:
            L: Input dimension (length)
            d: Output dimension (depth), even only
-           n: Constant for the sinusoidal functins
+           n: Constant for the sinusoidal functions
            
       Returns:
           numpy matrix of floats of dimension L-by-d. At element (k, 2i) the value
@@ -347,3 +361,28 @@ plt.show()
 
 with open("posenc-2048-512.pickle", "wb") as fp:
     pickle.dump(pos_matrix, fp)
+    
+with open("posenc-2048-512.pickle", "rb") as fp:
+    pos_matrix = pickle.load(fp)
+
+assert pos_matrix.shape == (2048,512)
+#plot the poistional encoding matrix
+plt.pcolormesh(np.hstack([pos_matrix[:, ::2], pos_matrix[:, 1::2]]), cmap='RdBu')
+plt.xlabel('Depth')
+plt.ylabel('Position')
+plt.colorbar()
+plt.show()
+
+
+# Plot two curves from different position
+plt.plot(pos_matrix[100], alpha=0.66, color="red", label="position 100")
+plt.legend()
+plt.show()
+
+# Show the dot product between different normalized positional vectors
+pos_matrix /= np.linalg.norm(pos_matrix, axis=1, keepdims=True)
+p = pos_matrix[789] # All vectors compare to vector at position 789
+dots = pos_matrix @ p
+plt.plot(dots)
+plt.ylim([0, 1])
+plt.show()
