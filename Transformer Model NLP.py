@@ -143,12 +143,12 @@ plt.show()
 # =============================================================================
 from tensorflow.keras.layers import TextVectorization
 
- 
-# Load normalized sentence pairs
+# Loads the normalized sentence pairs from a binary file called "text_pairs.pickle"
+# using the python pickle module.
 with open("text_pairs.pickle", "rb") as fp:
     text_pairs = pickle.load(fp)
  
-# train-test-val split of randomized sentence pairs
+# Shuffles the sentence pairs and splits them into training, validation and test sets.
 random.shuffle(text_pairs)
 n_val = int(0.15*len(text_pairs))
 n_train = len(text_pairs) - 2*n_val
@@ -161,7 +161,9 @@ vocab_size_en = 10000
 vocab_size_fr = 20000
 seq_length = 20
  
-# Create vectorizer
+# Creates a vectorization layer called TextVectorization 
+# from the TensorFlow library, which is used to convert 
+# text into numerical representations.
 eng_vectorizer = TextVectorization(
     max_tokens=vocab_size_en,
     standardize=None,
@@ -177,13 +179,14 @@ fra_vectorizer = TextVectorization(
     output_sequence_length=seq_length + 1
 )
  
-# train the vectorization layer using training dataset
+# Adapts the vectorization layer to the training dataset.
 train_eng_texts = [pair[0] for pair in train_pairs]
 train_fra_texts = [pair[1] for pair in train_pairs]
 eng_vectorizer.adapt(train_eng_texts)
 fra_vectorizer.adapt(train_fra_texts)
  
-# save for subsequent steps
+# Saves the training, validation and test sets and the vectorization
+# layer's configuration and weights to a file called "vectorize.pickle"
 with open("vectorize.pickle", "wb") as fp:
     data = {
         "train": train_pairs,
@@ -198,20 +201,24 @@ with open("vectorize.pickle", "wb") as fp:
     
     
  
-# load text data and vectorizer weights
+# Loads the text data and the vectorization layer's weights from 
+# the "vectorize.pickle" file
 with open("vectorize.pickle", "rb") as fp:
     data = pickle.load(fp)
  
 train_pairs = data["train"]
 val_pairs = data["val"]
-test_pairs = data["test"]   # not used
+test_pairs = data["test"]
  
 eng_vectorizer = TextVectorization.from_config(data["engvec_config"])
 eng_vectorizer.set_weights(data["engvec_weights"])
 fra_vectorizer = TextVectorization.from_config(data["fravec_config"])
 fra_vectorizer.set_weights(data["fravec_weights"])
  
-# set up Dataset object
+
+# Defines a function called format_dataset that takes in a pair 
+# of English and French sentences and converts them into inputs
+ # and target for training the model.
 def format_dataset(eng, fra):
     """Take an English and a French sentence pair, convert into input and target.
     The input is a dict with keys `encoder_inputs` and `decoder_inputs`, each
@@ -229,22 +236,35 @@ def format_dataset(eng, fra):
               "decoder_inputs": fra[:, :-1]}
     target = fra[:, 1:]
     return (source, target)
- 
-def make_dataset(pairs, batch_size=64):
-    """Create TensorFlow Dataset for the sentence pairs"""
-    # aggregate sentences using zip(*pairs)
-    eng_texts, fra_texts = zip(*pairs)
-    # convert them into list, and then create tensors
+
+# Defines a function called make_dataset that creates a TensorFlow Dataset
+# object for the sentence pairs, shuffles them, applies the format_dataset 
+# function and batches them for training.
+# def make_dataset(pairs, batch_size=64):
+#     """Create TensorFlow Dataset for the sentence pairs"""
+#     # aggregate sentences using zip(*pairs)
+#     eng_texts, fra_texts = zip(*pairs)
+#     # convert them into list, and then create tensors
     
-    dataset = tf.data.Dataset.from_tensor_slices((list(eng_texts), list(fra_texts)))
-    return dataset.shuffle(2048) \
-                  .batch(batch_size).map(format_dataset).prefetch(16).cache()
- 
+#     dataset = tf.data.Dataset.from_tensor_slices((list(eng_texts), list(fra_texts)))
+#     return dataset.shuffle(2048) \
+#                   .batch(batch_size).map(format_dataset).prefetch(16).cache()
+
+def make_dataset(pairs, batch_size=64):
+    eng_texts, fra_texts = zip(*pairs)
+    eng_texts = list(eng_texts)
+    fra_texts = list(fra_texts)
+    dataset = tf.data.Dataset.from_tensor_slices((eng_texts, fra_texts))
+    dataset = dataset.batch(batch_size)
+    dataset = dataset.map(format_dataset)
+    return dataset.shuffle(2048).prefetch(16).cache()
+
+# Creates train_ds and val_ds datasets
 train_ds = make_dataset(train_pairs)
 val_ds = make_dataset(val_pairs)
 
  
-# test the dataset
+# Tests the dataset by printing the shape and the first element of inputs and targets
 for inputs, targets in train_ds.take(1):
     print(f'inputs["encoder_inputs"].shape: {inputs["encoder_inputs"].shape}')
     print(f'inputs["encoder_inputs"][0]: {inputs["encoder_inputs"][0]}')
@@ -252,3 +272,78 @@ for inputs, targets in train_ds.take(1):
     print(f'inputs["decoder_inputs"][0]: {inputs["decoder_inputs"][0]}')
     print(f"targets.shape: {targets.shape}")
     print(f"targets[0]: {targets[0]}")
+# print(tf.__version__)
+# =============================================================================
+"""Positional Encoding Matrix"""
+# """Attention Is All You Need""" is a research paper published in 2017 by 
+# Google Brain which proposed a new neural network architecture for natural 
+# language processing tasks called the Transformer. This architecture uses
+# a self-attention mechanism, which allows the model to weigh the importance
+# of different parts of the input when making a prediction, rather than 
+# using a fixed-length context like previous models. This architecture showed 
+# state-of-the-art performance on a variety of NLP tasks and is widely used 
+# in many state-of-the-art models such as BERT and GPT-3.
+
+
+"""
+In the Transformer architecture, the input is represented as a sequence 
+of tokens (e.g. words in a sentence), and the model processes these tokens 
+in parallel rather than sequentially. However, the order of the tokens 
+in the sequence is still important information that needs to be taken 
+into account by the model. To solve this problem, the Transformer uses 
+a concept called positional embeddings.
+
+A positional embedding is a fixed-size vector that is added to the token 
+representation at each position in the input sequence. These vectors 
+are designed to encode information about the position of the token in 
+the sequence, so that the model can take into account the order of the tokens. 
+The vectors are learned during the training process along with the other
+ model parameters.
+
+In practice, the positional embeddings are added to the token representations 
+before they are fed into the self-attention mechanism. This allows the attention
+ mechanism to take into account the relative position of the tokens when
+ calculating the attention weights.
+
+Overall, positional embedding is a technique used to incorporate the order
+ of the tokens in the input, since the Transformer is a parallel processing
+ architecture that doesn't have a notion of the order of the tokens in the input
+ sequence.
+"""
+# =============================================================================
+
+import numpy as np
+
+def pos_enc_matrix(L, d, n=10000):
+    """Create positional encoding matrix
+       Args:
+           L: Input dimension (length)
+           d: Output dimension (depth), even only
+           n: Constant for the sinusoidal functins
+           
+      Returns:
+          numpy matrix of floats of dimension L-by-d. At element (k, 2i) the value
+          is sin(k/n^(2i/d)) while at element (k,2i+1) the value is cos(k/n^(2i/d))
+     """
+    assert d % 2 == 0, "Output dimension needs to be an even integer"
+    d2 = d//2
+    P = np.zeros((L, d))
+    k = np.arange(L).reshape(-1, 1) # L-column vector
+    i = np.arange(d2).reshape(1, -1) # d-row vector
+    denom = np.power(n, -i/d2) # n**(-2*i/d)
+    args = k * denom
+    P[:, ::2] = np.sin(args)
+    P[:, 1::2] = np.cos(args)
+    return P;
+
+# Plot the positional encoding matrix
+pos_matrix = pos_enc_matrix(L=2048, d=512)
+assert pos_matrix.shape == (2048, 512)
+plt.pcolormesh(pos_matrix, cmap='RdBu')
+plt.xlabel('Depth')
+plt.ylabel('Position')
+plt.colorbar()
+plt.show()
+
+with open("posenc-2048-512.pickle", "wb") as fp:
+    pickle.dump(pos_matrix, fp)
