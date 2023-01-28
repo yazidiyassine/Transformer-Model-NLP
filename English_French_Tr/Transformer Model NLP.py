@@ -5,45 +5,6 @@ Created on Mon Jan 23 12:11:58 2023
 @author: Yassine Yazidi
 """
 
-# =============================================================================
-"""Positional Encoding Matrix"""
-# """Attention Is All You Need""" is a research paper published in 2017 by 
-# Google Brain which proposed a new neural network architecture for natural 
-# language processing tasks called the Transformer. This architecture uses
-# a self-attention mechanism, which allows the model to weigh the importance
-# of different parts of the input when making a prediction, rather than 
-# using a fixed-length context like previous models. This architecture showed 
-# state-of-the-art performance on a variety of NLP tasks and is widely used 
-# in many state-of-the-art models such as BERT and GPT-3.
-
-
-"""
-In the Transformer architecture, the input is represented as a sequence 
-of tokens (e.g. words in a sentence), and the model processes these tokens 
-in parallel rather than sequentially. However, the order of the tokens 
-in the sequence is still important information that needs to be taken 
-into account by the model. To solve this problem, the Transformer uses 
-a concept called positional embeddings.
-
-A positional embedding is a fixed-size vector that is added to the token 
-representation at each position in the input sequence. These vectors 
-are designed to encode information about the position of the token in 
-the sequence, so that the model can take into account the order of the tokens. 
-The vectors are learned during the training process along with the other
- model parameters.
-
-In practice, the positional embeddings are added to the token representations 
-before they are fed into the self-attention mechanism. This allows the attention
- mechanism to take into account the relative position of the tokens when
- calculating the attention weights.
-
-Overall, positional embedding is a technique used to incorporate the order
- of the tokens in the input, since the Transformer is a parallel processing
- architecture that doesn't have a notion of the order of the tokens in the input
- sequence.
-"""
-# =============================================================================
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
